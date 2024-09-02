@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"errors"
 	"github.com/kulakoff/todo-list-go/cmd/models"
 	"github.com/kulakoff/todo-list-go/cmd/repositories"
 	"github.com/labstack/echo/v4"
@@ -29,18 +29,19 @@ func Get(c echo.Context) error {
 
 	task, err := repositories.GetTask(idInt)
 	if err != nil {
-		log.Println(err.Error())
-		log.Println(err)
+		if errors.Is(err, repositories.ErrTaskNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "task not found"})
+		}
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
+
 	return c.JSON(http.StatusOK, task)
 }
 
 func CreateTask(c echo.Context) error {
-	log.Println("run CreateTask")
+	// TODO: Implement check payload data
 	task := models.Task{}
 	err := c.Bind(&task)
-	// Implement  check  payload data
 	if err != nil {
 		log.Println("Failed bind data")
 		return err
@@ -57,7 +58,6 @@ func CreateTask(c echo.Context) error {
 }
 
 func UpdateTask(c echo.Context) error {
-	log.Println("run UpdateTask")
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -67,8 +67,12 @@ func UpdateTask(c echo.Context) error {
 
 	task := models.Task{}
 	task.UpdatedAt = time.Now()
-	c.Bind(&task)
-	//log.Println(task)
+
+	err = c.Bind(&task)
+	if err != nil {
+		return err
+	}
+
 	updatedTask, err := repositories.UpdateTask(task, idInt)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
@@ -78,7 +82,6 @@ func UpdateTask(c echo.Context) error {
 }
 
 func DeleteTask(c echo.Context) error {
-	log.Println("run DeleteTask")
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -88,9 +91,8 @@ func DeleteTask(c echo.Context) error {
 
 	err = repositories.DeleteTask(idInt)
 	if err != nil {
-		log.Println("Error deleting task")
-		log.Println(err)
-		if err.Error() == fmt.Sprintf("not found ID: %d", idInt) {
+		if errors.Is(err, repositories.ErrTaskNotFound) {
+			log.Println("Error deleting task, not found")
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "task not found"})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
