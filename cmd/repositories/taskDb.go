@@ -75,6 +75,10 @@ func UpdateTask(task models.Task, id int) (models.Task, error) {
 
 	err := db.QueryRow(sqlQuerry, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return task, ErrTaskNotFound
+		}
+
 		return task, err
 	}
 	task.ID = id

@@ -11,10 +11,10 @@ func main() {
 	e := echo.New()
 
 	// ---- Routes ----
-	e.POST("/tasks", handlers.CreateTask)
 	e.GET("/tasks", handlers.GetAll)
-	e.PUT("/tasks/:id", handlers.UpdateTask)
+	e.POST("/tasks", handlers.CreateTask)
 	e.GET("/tasks/:id", handlers.Get)
+	e.PUT("/tasks/:id", handlers.UpdateTask)
 	e.DELETE("/tasks/:id", handlers.DeleteTask)
 
 	//	---- DB connect ----

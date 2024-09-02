@@ -12,8 +12,6 @@ import (
 )
 
 func GetAll(c echo.Context) error {
-	log.Println("run GetAll")
-
 	tasks, err := repositories.GetAllTasks()
 	if err != nil {
 		log.Println(err.Error())
@@ -23,7 +21,6 @@ func GetAll(c echo.Context) error {
 }
 
 func Get(c echo.Context) error {
-	log.Println("run Get task")
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 
@@ -75,6 +72,10 @@ func UpdateTask(c echo.Context) error {
 
 	updatedTask, err := repositories.UpdateTask(task, idInt)
 	if err != nil {
+		if errors.Is(err, repositories.ErrTaskNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "task not found"})
+		}
+
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 	}
 
