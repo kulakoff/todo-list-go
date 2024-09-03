@@ -13,7 +13,17 @@ import (
 	"time"
 )
 
-func GetAll(c echo.Context) error {
+type TaskHandler interface {
+	GetAll(c echo.Context) error
+	Get(c echo.Context) error
+	Create(c echo.Context) error
+	Update(c echo.Context) error
+	Delete(c echo.Context) error
+}
+
+type handleStruct struct{}
+
+func (h *handleStruct) GetAll(c echo.Context) error {
 	tasks, err := repositories.GetAllTasks()
 	if err != nil {
 		log.Println(err.Error())
@@ -22,7 +32,7 @@ func GetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, tasks)
 }
 
-func Get(c echo.Context) error {
+func (h *handleStruct) Get(c echo.Context) error {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -41,7 +51,7 @@ func Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, task)
 }
 
-func Create(c echo.Context) error {
+func (h *handleStruct) Create(c echo.Context) error {
 	// TODO: Implement check payload data
 	task := models.Task{}
 	err := c.Bind(&task)
@@ -61,7 +71,7 @@ func Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, newTask)
 }
 
-func Update(c echo.Context) error {
+func (h *handleStruct) Update(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -89,7 +99,7 @@ func Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, updatedTask)
 }
 
-func Delete(c echo.Context) error {
+func (h *handleStruct) Delete(c echo.Context) error {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -107,4 +117,8 @@ func Delete(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusNoContent, nil)
+}
+
+func NewTaskHandler() TaskHandler {
+	return &handleStruct{}
 }

@@ -10,12 +10,14 @@ import (
 func main() {
 	e := echo.New()
 
+	taskHandler := handlers.NewTaskHandler()
+
 	// ---- Routes ----
-	e.GET("/tasks", handlers.GetAll)
-	e.POST("/tasks", handlers.Create)
-	e.GET("/tasks/:id", handlers.Get)
-	e.PUT("/tasks/:id", handlers.Update)
-	e.DELETE("/tasks/:id", handlers.Delete)
+	e.GET("/tasks", taskHandler.GetAll)
+	e.POST("/tasks", taskHandler.Create)
+	e.GET("/tasks/:id", taskHandler.Get)
+	e.PUT("/tasks/:id", taskHandler.Update)
+	e.DELETE("/tasks/:id", taskHandler.Delete)
 
 	//	---- DB connect ----
 	storage.InitDB()
