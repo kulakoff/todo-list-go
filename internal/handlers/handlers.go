@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"errors"
-	"github.com/kulakoff/todo-list-go/cmd/err_msg"
-	"github.com/kulakoff/todo-list-go/cmd/models"
-	"github.com/kulakoff/todo-list-go/cmd/repositories"
+	"github.com/kulakoff/todo-list-go/internal/err_msg"
+	"github.com/kulakoff/todo-list-go/internal/models"
+	"github.com/kulakoff/todo-list-go/internal/repositories"
 	"github.com/labstack/echo/v4"
 	"log"
 	"log/slog"

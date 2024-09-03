@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kulakoff/todo-list-go/cmd/handlers"
-	"github.com/kulakoff/todo-list-go/cmd/storage"
+	"github.com/kulakoff/todo-list-go/internal/handlers"
+	"github.com/kulakoff/todo-list-go/internal/storage"
 	"github.com/labstack/echo/v4"
 	"os"
 )

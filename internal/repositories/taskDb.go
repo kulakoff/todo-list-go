@@ -3,9 +3,9 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-	"github.com/kulakoff/todo-list-go/cmd/err_msg"
-	"github.com/kulakoff/todo-list-go/cmd/models"
-	"github.com/kulakoff/todo-list-go/cmd/storage"
+	"github.com/kulakoff/todo-list-go/internal/err_msg"
+	"github.com/kulakoff/todo-list-go/internal/models"
+	"github.com/kulakoff/todo-list-go/internal/storage"
 	"log"
 )
 
