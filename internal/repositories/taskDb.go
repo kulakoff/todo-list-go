@@ -6,7 +6,7 @@ import (
 	"github.com/kulakoff/todo-list-go/internal/err_msg"
 	"github.com/kulakoff/todo-list-go/internal/models"
 	"github.com/kulakoff/todo-list-go/internal/storage"
-	"log"
+	"log/slog"
 )
 
 //var ErrTaskNotFound = err_msg.New("task not found")
@@ -50,8 +50,7 @@ func GetAllTasks() ([]models.Task, error) {
 	for rows.Next() {
 		var task models.Task
 		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt); err != nil {
-			log.Println("Error scanning row:")
-			log.Println(err.Error())
+			slog.Info("Error scanning row:", err)
 			continue
 		}
 		tasks = append(tasks, task)
@@ -59,8 +58,7 @@ func GetAllTasks() ([]models.Task, error) {
 
 	// Checking for err_msg after a cycle has completed
 	if err := rows.Err(); err != nil {
-		log.Println("Rows iteration error:")
-		log.Println(err.Error())
+		slog.Info("Rows iteration error:", err)
 		return nil, err
 	}
 
@@ -97,12 +95,12 @@ func DeleteTask(id int) error {
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		log.Println("Error checking rows affected:")
+		slog.Info("Error checking rows affected:")
 		return err
 	}
 
 	if rowsAffected == 0 {
-		log.Println("No rows were affected")
+		slog.Info("No rows were affected")
 		return err_msg.ErrTaskNotFound
 	}
 

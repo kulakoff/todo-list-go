@@ -6,6 +6,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
+	"log/slog"
 	"os"
 )
 
@@ -29,17 +30,54 @@ func InitDB() {
 			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 			dbHost, dbUser, dbPass, dbName, dbPort))
 	if err != nil {
-		log.Fatal(err.Error())
+		slog.Error(err.Error())
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatal(err.Error())
+		slog.Error(err.Error())
 	}
 
-	log.Println("Successfully connect to DB")
+	slog.Info("Successfully connect to DB")
+
+	// ----- run migration
+	err = migrate()
+	if err != nil {
+		slog.Error("Error running migration: ", err)
+	}
 }
 
 func GetDB() *sql.DB {
 	return db
+}
+
+func migrate() error {
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tasks')").Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	// run migration if table not exist
+	if !exists {
+		sqlCreateTable := `
+		CREATE TABLE tasks (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(255) NOT NULL,
+			description TEXT,
+			due_date TIMESTAMP NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`
+
+		_, err := db.Exec(sqlCreateTable)
+		if err != nil {
+			return err
+		}
+
+		slog.Info("Migration completed successfully: Table created")
+	} else {
+		slog.Info("Migration completed successfully: Table already exists")
+	}
+	return nil
 }
