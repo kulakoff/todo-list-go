@@ -3,12 +3,13 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"github.com/kulakoff/todo-list-go/cmd/err_msg"
 	"github.com/kulakoff/todo-list-go/cmd/models"
 	"github.com/kulakoff/todo-list-go/cmd/storage"
 	"log"
 )
 
-var ErrTaskNotFound = errors.New("task not found")
+//var ErrTaskNotFound = err_msg.New("task not found")
 
 func CreateTask(task models.Task) (models.Task, error) {
 	db := storage.GetDB()
@@ -30,7 +31,7 @@ func GetTask(id int) (models.Task, error) {
 	err := row.Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return task, ErrTaskNotFound
+			return task, err_msg.ErrTaskNotFound
 		}
 		return models.Task{}, err
 	}
@@ -56,7 +57,7 @@ func GetAllTasks() ([]models.Task, error) {
 		tasks = append(tasks, task)
 	}
 
-	// Checking for errors after a cycle has completed
+	// Checking for err_msg after a cycle has completed
 	if err := rows.Err(); err != nil {
 		log.Println("Rows iteration error:")
 		log.Println(err.Error())
@@ -76,7 +77,7 @@ func UpdateTask(task models.Task, id int) (models.Task, error) {
 	err := db.QueryRow(sqlQuerry, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return task, ErrTaskNotFound
+			return task, err_msg.ErrTaskNotFound
 		}
 
 		return task, err
@@ -102,7 +103,7 @@ func DeleteTask(id int) error {
 
 	if rowsAffected == 0 {
 		log.Println("No rows were affected")
-		return ErrTaskNotFound
+		return err_msg.ErrTaskNotFound
 	}
 
 	return nil

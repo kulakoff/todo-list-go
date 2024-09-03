@@ -12,10 +12,10 @@ func main() {
 
 	// ---- Routes ----
 	e.GET("/tasks", handlers.GetAll)
-	e.POST("/tasks", handlers.CreateTask)
+	e.POST("/tasks", handlers.Create)
 	e.GET("/tasks/:id", handlers.Get)
-	e.PUT("/tasks/:id", handlers.UpdateTask)
-	e.DELETE("/tasks/:id", handlers.DeleteTask)
+	e.PUT("/tasks/:id", handlers.Update)
+	e.DELETE("/tasks/:id", handlers.Delete)
 
 	//	---- DB connect ----
 	storage.InitDB()
