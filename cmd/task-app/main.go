@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kulakoff/todo-list-go/internal/handlers"
+	"github.com/kulakoff/todo-list-go/internal/app/endpoint"
 	"github.com/kulakoff/todo-list-go/internal/storage"
 	"github.com/labstack/echo/v4"
 	"os"
@@ -10,14 +10,14 @@ import (
 func main() {
 	e := echo.New()
 
-	taskHandler := handlers.NewTaskHandler()
+	handler := endpoint.New()
 
 	// ---- Routes ----
-	e.GET("/tasks", taskHandler.GetAll)
-	e.POST("/tasks", taskHandler.Create)
-	e.GET("/tasks/:id", taskHandler.Get)
-	e.PUT("/tasks/:id", taskHandler.Update)
-	e.DELETE("/tasks/:id", taskHandler.Delete)
+	e.GET("/tasks", handler.GetAll).Name = "get-all"
+	e.POST("/tasks", handler.Create).Name = "create"
+	e.GET("/tasks/:id", handler.Get).Name = "get"
+	e.PUT("/tasks/:id", handler.Update).Name = "update"
+	e.DELETE("/tasks/:id", handler.Delete).Name = "delete"
 
 	//	---- DB connect ----
 	storage.InitDB()

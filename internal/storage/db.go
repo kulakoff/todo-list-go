@@ -47,7 +47,7 @@ func InitDB() {
 	}
 }
 
-func GetDB() *sql.DB {
+func New() *sql.DB {
 	return db
 }
 
