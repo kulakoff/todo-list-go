@@ -2,32 +2,21 @@ package endpoint
 
 import (
 	"errors"
+	"github.com/kulakoff/todo-list-go/internal/app/service"
 	"github.com/kulakoff/todo-list-go/internal/err_msg"
 	"github.com/kulakoff/todo-list-go/internal/repositories"
 	"github.com/labstack/echo/v4"
 	"log/slog"
 	"net/http"
 	"strconv"
-	"time"
 )
 
-//type IntEndpoint interface {
-//	GetAll(c echo.Context) error
-//	Get(c echo.Context) error
-//	Create(c echo.Context) error
-//	Update(c echo.Context) error
-//	Delete(c echo.Context) error
-//}
-
-type Service interface {
-}
-
 type Endpoint struct {
-	s Service
+	s service.TaskService
 }
 
 func (e *Endpoint) GetAll(c echo.Context) error {
-	tasks, err := repositories.GetAllTasks()
+	tasks, err := e.s.GetAllTasks()
 	if err != nil {
 		slog.Info(err.Error())
 		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal)
@@ -40,15 +29,16 @@ func (e *Endpoint) Get(c echo.Context) error {
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		slog.Info("failed parse ID to int")
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": err_msg.ErrBadRequest.Error()})
+		return c.JSON(http.StatusBadRequest, err_msg.ErrBadRequest.Error())
 	}
 
-	task, err := repositories.GetTask(idInt)
+	task, err := e.s.GetTask(idInt)
 	if err != nil {
+		slog.Info("endpoint.get", err.Error())
 		if errors.Is(err, err_msg.ErrTaskNotFound) {
-			return c.JSON(http.StatusNotFound, err_msg.ErrTaskNotFound)
+			return c.JSON(http.StatusNotFound, err_msg.ErrTaskNotFound.Error())
 		}
-		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal)
+		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal.Error())
 	}
 
 	return c.JSON(http.StatusOK, task)
@@ -56,20 +46,16 @@ func (e *Endpoint) Get(c echo.Context) error {
 
 func (e *Endpoint) Create(c echo.Context) error {
 	// TODO: Implement check payload data
-	task := models.Task{}
+	task := repositories.Task{}
 	err := c.Bind(&task)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err_msg.ErrBadRequest)
+		return c.JSON(http.StatusBadRequest, err_msg.ErrBadRequest.Error())
 	}
 
-	now := time.Now()
-	task.CreatedAt = now
-	task.UpdatedAt = now
-
-	newTask, err := repositories.CreateTask(task)
+	newTask, err := e.s.CreateTask(task)
 	if err != nil {
 		slog.Info(err.Error())
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Проблема на сервере"})
+		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal.Error())
 	}
 	return c.JSON(http.StatusCreated, newTask)
 }
@@ -79,24 +65,23 @@ func (e *Endpoint) Update(c echo.Context) error {
 
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err_msg.ErrBadRequest)
+		return c.JSON(http.StatusBadRequest, err_msg.ErrBadRequest.Error())
 	}
 
-	task := models.Task{}
-	task.UpdatedAt = time.Now()
+	task := repositories.Task{}
 
 	err = c.Bind(&task)
 	if err != nil {
 		return err
 	}
 
-	updatedTask, err := repositories.UpdateTask(task, idInt)
+	updatedTask, err := e.s.UpdateTask(idInt, task)
 	if err != nil {
 		if errors.Is(err, err_msg.ErrTaskNotFound) {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": "task not found"})
+			return c.JSON(http.StatusNotFound, err_msg.ErrTaskNotFound.Error())
 		}
 
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal.Error())
 	}
 
 	return c.JSON(http.StatusOK, updatedTask)
@@ -110,18 +95,20 @@ func (e *Endpoint) Delete(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Invalid task ID "})
 	}
 
-	err = repositories.DeleteTask(idInt)
+	err = e.s.DeleteTask(idInt)
 	if err != nil {
 		if errors.Is(err, err_msg.ErrTaskNotFound) {
 			slog.Info("Error deleting task, not found")
-			return c.JSON(http.StatusNotFound, map[string]string{"error": "task not found"})
+			return c.JSON(http.StatusNotFound, err_msg.ErrTaskNotFound.Error())
 		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
+		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal.Error())
 	}
 
 	return c.JSON(http.StatusNoContent, nil)
 }
 
-func New() *Endpoint {
-	return &Endpoint{}
+func New(s service.TaskService) *Endpoint {
+	return &Endpoint{
+		s: s,
+	}
 }

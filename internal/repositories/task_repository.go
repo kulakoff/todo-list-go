@@ -1,12 +1,17 @@
 package repositories
 
-import "database/sql"
+import (
+	"database/sql"
+	"errors"
+	"github.com/kulakoff/todo-list-go/internal/err_msg"
+	"log/slog"
+)
 
 type TaskRepository interface {
 	CreateTask(task Task) (Task, error)
 	GetAllTasks() ([]Task, error)
 	GetTaskById(id int) (Task, error)
-	UpdateTask(task Task, id int) (Task, error)
+	UpdateTask(id int, task Task) (Task, error)
 	DeleteTask(id int) error
 }
 
@@ -15,28 +20,85 @@ type taskRepository struct {
 }
 
 func (t taskRepository) CreateTask(task Task) (Task, error) {
-	//TODO implement me
-	panic("implement me")
+	sqlQuery := `INSERT INTO tasks (title, description, due_date) VALUES ($1, $2, $3) RETURNING id, title, description, due_date, created_at, updated_at`
+	err := t.db.QueryRow(sqlQuery, task.Title, task.Description, task.DueDate).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
+	if err != nil {
+		return task, err
+	}
+	return task, nil
 }
 
 func (t taskRepository) GetAllTasks() ([]Task, error) {
-	//TODO implement me
-	panic("implement me")
+	sqlQuery := "SELECT id, title, description, due_date, created_at, updated_at FROM tasks ORDER BY id"
+	rows, err := t.db.Query(sqlQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt); err != nil {
+			slog.Info("Error scanning row:", err)
+			continue
+		}
+		tasks = append(tasks, task)
+	}
+
+	if err := rows.Err(); err != nil {
+		slog.Info("Rows iteration error:", err)
+		return nil, err
+	}
+
+	return tasks, nil
 }
 
 func (t taskRepository) GetTaskById(id int) (Task, error) {
-	//TODO implement me
-	panic("implement me")
+	sqlQuery := `SELECT id, title, description, due_date, created_at, updated_at FROM tasks WHERE id = $1`
+	var task Task
+	err := t.db.QueryRow(sqlQuery, id).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
+	if err != nil {
+		//if errors.Is(err, sql.ErrNoRows) {
+		//	slog.Info(err.Error())
+		//	return task, err_msg.ErrTaskNotFound
+		//}
+		return task, err
+	}
+	return task, nil
 }
 
-func (t taskRepository) UpdateTask(task Task, id int) (Task, error) {
-	//TODO implement me
-	panic("implement me")
+func (t taskRepository) UpdateTask(id int, task Task) (Task, error) {
+	sqlQuery := `UPDATE tasks SET title = $2, description = $3, due_date = $4, updated_at = $5 WHERE id = $1 RETURNING id, title, description, due_date, created_at, updated_at`
+	err := t.db.QueryRow(sqlQuery, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return task, err_msg.ErrTaskNotFound
+		}
+		return task, err
+	}
+	return task, nil
 }
 
 func (t taskRepository) DeleteTask(id int) error {
-	//TODO implement me
-	panic("implement me")
+	sqlQuery := `DELETE FROM tasks WHERE id = $1`
+	result, err := t.db.Exec(sqlQuery, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		slog.Info("Error checking rows affected:", err)
+		return err
+	}
+
+	if rowsAffected == 0 {
+		slog.Info("No rows were affected", "taskID", id)
+		return err_msg.ErrTaskNotFound
+	}
+
+	return nil
 }
 
 func New(db *sql.DB) TaskRepository {

@@ -2,15 +2,24 @@ package main
 
 import (
 	"github.com/kulakoff/todo-list-go/internal/app/endpoint"
+	"github.com/kulakoff/todo-list-go/internal/app/service"
+	"github.com/kulakoff/todo-list-go/internal/repositories"
 	"github.com/kulakoff/todo-list-go/internal/storage"
 	"github.com/labstack/echo/v4"
 	"os"
 )
 
 func main() {
-	e := echo.New()
+	//	---- DB connect ----
+	storage.InitDB()
+	db := storage.New()
 
-	handler := endpoint.New()
+	// ----- Repository & Service init -----
+	taskRepo := repositories.New(db)
+	taskService := service.New(taskRepo)
+	handler := endpoint.New(taskService)
+
+	e := echo.New()
 
 	// ---- Routes ----
 	e.GET("/tasks", handler.GetAll).Name = "get-all"
@@ -18,9 +27,6 @@ func main() {
 	e.GET("/tasks/:id", handler.Get).Name = "get"
 	e.PUT("/tasks/:id", handler.Update).Name = "update"
 	e.DELETE("/tasks/:id", handler.Delete).Name = "delete"
-
-	//	---- DB connect ----
-	storage.InitDB()
 
 	//	---- Start server ----
 	port := os.Getenv("PORT")
