@@ -11,11 +11,10 @@ import (
 
 func main() {
 	//	---- DB connect ----
-	err := storage.InitDB()
+	db, err := storage.New()
 	if err != nil {
-		return
+		panic(err)
 	}
-	db := storage.New()
 
 	// ----- Repository & Service init -----
 	taskRepo := repositories.New(db)
