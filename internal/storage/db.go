@@ -12,7 +12,7 @@ import (
 
 var db *sql.DB
 
-func InitDB() {
+func InitDB() error {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -31,11 +31,13 @@ func InitDB() {
 			dbHost, dbUser, dbPass, dbName, dbPort))
 	if err != nil {
 		slog.Error(err.Error())
+		return err
 	}
 
 	err = db.Ping()
 	if err != nil {
 		slog.Error(err.Error())
+		return err
 	}
 
 	slog.Info("Successfully connect to DB")
@@ -43,8 +45,10 @@ func InitDB() {
 	// ----- run migration
 	err = migrate()
 	if err != nil {
-		slog.Error("Error running migration: ", err)
+		slog.Error("failed to run migration: ", err)
+		return fmt.Errorf("failed to run migration: %w", err)
 	}
+	return nil
 }
 
 func New() *sql.DB {

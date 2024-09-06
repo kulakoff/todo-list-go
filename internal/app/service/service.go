@@ -16,6 +16,7 @@ type TaskService interface {
 	UpdateTask(id int, task repositories.Task) (repositories.Task, error)
 	DeleteTask(id int) error
 }
+
 type taskService struct {
 	repo repositories.TaskRepository
 }
@@ -73,6 +74,9 @@ func (t *taskService) DeleteTask(id int) error {
 }
 
 func New(repo repositories.TaskRepository) TaskService {
+	//var service TaskService = &taskService{repo: repo}
+	//return &service
+
 	return &taskService{
 		repo: repo,
 	}

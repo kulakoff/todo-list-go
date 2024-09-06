@@ -11,7 +11,10 @@ import (
 
 func main() {
 	//	---- DB connect ----
-	storage.InitDB()
+	err := storage.InitDB()
+	if err != nil {
+		return
+	}
 	db := storage.New()
 
 	// ----- Repository & Service init -----

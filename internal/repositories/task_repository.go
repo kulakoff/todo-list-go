@@ -19,7 +19,7 @@ type taskRepository struct {
 	db *sql.DB
 }
 
-func (t taskRepository) CreateTask(task Task) (Task, error) {
+func (t *taskRepository) CreateTask(task Task) (Task, error) {
 	sqlQuery := `INSERT INTO tasks (title, description, due_date) VALUES ($1, $2, $3) RETURNING id, title, description, due_date, created_at, updated_at`
 	err := t.db.QueryRow(sqlQuery, task.Title, task.Description, task.DueDate).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
@@ -28,7 +28,7 @@ func (t taskRepository) CreateTask(task Task) (Task, error) {
 	return task, nil
 }
 
-func (t taskRepository) GetAllTasks() ([]Task, error) {
+func (t *taskRepository) GetAllTasks() ([]Task, error) {
 	sqlQuery := "SELECT id, title, description, due_date, created_at, updated_at FROM tasks ORDER BY id"
 	rows, err := t.db.Query(sqlQuery)
 	if err != nil {
@@ -54,7 +54,7 @@ func (t taskRepository) GetAllTasks() ([]Task, error) {
 	return tasks, nil
 }
 
-func (t taskRepository) GetTaskById(id int) (Task, error) {
+func (t *taskRepository) GetTaskById(id int) (Task, error) {
 	sqlQuery := `SELECT id, title, description, due_date, created_at, updated_at FROM tasks WHERE id = $1`
 	var task Task
 	err := t.db.QueryRow(sqlQuery, id).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
@@ -68,7 +68,7 @@ func (t taskRepository) GetTaskById(id int) (Task, error) {
 	return task, nil
 }
 
-func (t taskRepository) UpdateTask(id int, task Task) (Task, error) {
+func (t *taskRepository) UpdateTask(id int, task Task) (Task, error) {
 	sqlQuery := `UPDATE tasks SET title = $2, description = $3, due_date = $4, updated_at = $5 WHERE id = $1 RETURNING id, title, description, due_date, created_at, updated_at`
 	err := t.db.QueryRow(sqlQuery, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
@@ -80,7 +80,7 @@ func (t taskRepository) UpdateTask(id int, task Task) (Task, error) {
 	return task, nil
 }
 
-func (t taskRepository) DeleteTask(id int) error {
+func (t *taskRepository) DeleteTask(id int) error {
 	sqlQuery := `DELETE FROM tasks WHERE id = $1`
 	result, err := t.db.Exec(sqlQuery, id)
 	if err != nil {
