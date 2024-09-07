@@ -13,7 +13,7 @@ import (
 var db *sql.DB
 
 func New() (*sql.DB, error) {
-	if db == nil {
+	if db != nil {
 		return db, nil
 	}
 
