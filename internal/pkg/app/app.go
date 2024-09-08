@@ -6,6 +6,7 @@ import (
 	"github.com/kulakoff/todo-list-go/internal/repositories"
 	"github.com/kulakoff/todo-list-go/internal/storage"
 	"github.com/labstack/echo/v4"
+	"log/slog"
 )
 
 type App struct {
@@ -32,6 +33,9 @@ func New() (*App, error) {
 		Service:    taskService,
 		Repository: taskRepo,
 	}
+
+	a.SetupRoutes()
+
 	return a, nil
 }
 
@@ -44,8 +48,10 @@ func (a *App) SetupRoutes() {
 }
 
 func (a *App) Start(port string) error {
+	slog.Info("server running")
 	if port == "" {
 		port = "5055"
 	}
-	return a.Echo.Start(":" + port)
+	a.Echo.Logger.Fatal(a.Echo.Start(":" + port))
+	return nil
 }
