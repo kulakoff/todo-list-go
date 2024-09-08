@@ -16,22 +16,29 @@ type App struct {
 }
 
 func New() (*App, error) {
-	storage.InitDB()
-	db := storage.New()
+	// ----- init storage
+	db, err := storage.New()
+	if err != nil {
+		panic(err)
+	}
 
-	// ----- init repository, service and endpoint-handlers
-	taskRepo := repositories.New(db)
-	taskService := service.New(taskRepo)
-	handler := endpoint.New(taskService)
+	a := &App{}
+	a.Echo = echo.New()
+	a.Repository = repositories.New(db)
 
-	e := echo.New()
-
-	return &App{
-		Echo:       e,
-		Handler:    handler,
-		Service:    taskService,
-		Repository: taskRepo,
-	}, nil
+	//// ----- init repository, service and endpoint-handlers
+	//taskRepo := repositories.New(db)
+	//taskService := service.New(taskRepo)
+	//handler := endpoint.New(taskService)
+	//
+	//e := echo.New()
+	//
+	//return &App{
+	//	Echo:       e,
+	//	Handler:    handler,
+	//	Service:    taskService,
+	//	Repository: taskRepo,
+	//}, nil
 }
 
 func (a *App) SetupRoutes() {

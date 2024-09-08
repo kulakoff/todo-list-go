@@ -17,11 +17,11 @@ type TaskService interface {
 	DeleteTask(id int) error
 }
 
-type taskService struct {
+type TaskServiceStruct struct {
 	repo repositories.TaskRepository
 }
 
-func (t *taskService) CreateTask(task repositories.Task) (repositories.Task, error) {
+func (t *TaskServiceStruct) CreateTask(task repositories.Task) (repositories.Task, error) {
 	now := time.Now()
 	task.CreatedAt = now
 	task.UpdatedAt = now
@@ -33,7 +33,7 @@ func (t *taskService) CreateTask(task repositories.Task) (repositories.Task, err
 	return createdTask, nil
 }
 
-func (t *taskService) GetTask(id int) (repositories.Task, error) {
+func (t *TaskServiceStruct) GetTask(id int) (repositories.Task, error) {
 	task, err := t.repo.GetTaskById(id)
 	if err != nil {
 		slog.Info("service.GetTask ", err.Error())
@@ -46,7 +46,7 @@ func (t *taskService) GetTask(id int) (repositories.Task, error) {
 	return task, nil
 }
 
-func (t *taskService) GetAllTasks() ([]repositories.Task, error) {
+func (t *TaskServiceStruct) GetAllTasks() ([]repositories.Task, error) {
 	tasks, err := t.repo.GetAllTasks()
 	if err != nil {
 		return []repositories.Task{}, err
@@ -54,7 +54,7 @@ func (t *taskService) GetAllTasks() ([]repositories.Task, error) {
 	return tasks, nil
 }
 
-func (t *taskService) UpdateTask(id int, task repositories.Task) (repositories.Task, error) {
+func (t *TaskServiceStruct) UpdateTask(id int, task repositories.Task) (repositories.Task, error) {
 	task = repositories.Task{}
 	task.UpdatedAt = time.Now()
 
@@ -65,7 +65,7 @@ func (t *taskService) UpdateTask(id int, task repositories.Task) (repositories.T
 	return updatedTask, nil
 }
 
-func (t *taskService) DeleteTask(id int) error {
+func (t *TaskServiceStruct) DeleteTask(id int) error {
 	err := t.repo.DeleteTask(id)
 	if err != nil {
 		return err
@@ -73,11 +73,7 @@ func (t *taskService) DeleteTask(id int) error {
 	return nil
 }
 
-func New(repo repositories.TaskRepository) TaskService {
-	//var service TaskService = &taskService{repo: repo}
-	//return &service
+func New(repo repositories.TaskRepository) *TaskServiceStruct {
+	return &TaskServiceStruct{repo: repo}
 
-	return &taskService{
-		repo: repo,
-	}
 }

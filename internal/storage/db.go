@@ -106,8 +106,7 @@ func migrate() error {
 			return err
 		}
 		slog.Info("Migration completed successfully: Table created")
-	} else {
-		slog.Info("Migration completed successfully: Table already exists")
 	}
+
 	return nil
 }

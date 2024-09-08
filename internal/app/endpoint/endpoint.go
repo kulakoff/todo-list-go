@@ -107,8 +107,9 @@ func (e *Endpoint) Delete(c echo.Context) error {
 	return c.JSON(http.StatusNoContent, nil)
 }
 
-func New(s service.TaskService) *Endpoint {
-	return &Endpoint{
-		s: s,
-	}
+func New(s service.TaskService) Endpoint {
+	return Endpoint{s: s}
+	//return &Endpoint{
+	//	s: s,
+	//}
 }

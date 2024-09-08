@@ -19,22 +19,36 @@ type taskRepository struct {
 	db *sql.DB
 }
 
+const (
+	selectTaskById = `SELECT id, title, description, due_date, created_at, updated_at FROM tasks WHERE id = $1`
+	selectAllTasks = `SELECT id, title, description, due_date, created_at, updated_at FROM tasks ORDER BY id`
+	insertTask     = `INSERT INTO tasks (title, description, due_date) VALUES ($1, $2, $3) RETURNING id, title, description, due_date, created_at, updated_at`
+	updateTask     = `UPDATE tasks SET title = $2, description = $3, due_date = $4, updated_at = $5 WHERE id = $1 RETURNING id, title, description, due_date, created_at, updated_at`
+	deleteTask     = `DELETE FROM tasks WHERE id = $1`
+)
+
 func (t *taskRepository) CreateTask(task Task) (Task, error) {
-	sqlQuery := `INSERT INTO tasks (title, description, due_date) VALUES ($1, $2, $3) RETURNING id, title, description, due_date, created_at, updated_at`
-	err := t.db.QueryRow(sqlQuery, task.Title, task.Description, task.DueDate).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
+	err := t.db.QueryRow(insertTask, task.Title, task.Description, task.DueDate).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
+		slog.Error("Failed to create task", err)
 		return task, err
 	}
 	return task, nil
 }
 
 func (t *taskRepository) GetAllTasks() ([]Task, error) {
-	sqlQuery := "SELECT id, title, description, due_date, created_at, updated_at FROM tasks ORDER BY id"
-	rows, err := t.db.Query(sqlQuery)
+	rows, err := t.db.Query(selectAllTasks)
 	if err != nil {
+		slog.Error("Failed to get all tasks", err)
 		return nil, err
 	}
-	defer rows.Close()
+
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
 
 	var tasks []Task
 	for rows.Next() {
@@ -55,9 +69,8 @@ func (t *taskRepository) GetAllTasks() ([]Task, error) {
 }
 
 func (t *taskRepository) GetTaskById(id int) (Task, error) {
-	sqlQuery := `SELECT id, title, description, due_date, created_at, updated_at FROM tasks WHERE id = $1`
 	var task Task
-	err := t.db.QueryRow(sqlQuery, id).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
+	err := t.db.QueryRow(selectTaskById, id).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		//if errors.Is(err, sql.ErrNoRows) {
 		//	slog.Info(err.Error())
@@ -69,8 +82,7 @@ func (t *taskRepository) GetTaskById(id int) (Task, error) {
 }
 
 func (t *taskRepository) UpdateTask(id int, task Task) (Task, error) {
-	sqlQuery := `UPDATE tasks SET title = $2, description = $3, due_date = $4, updated_at = $5 WHERE id = $1 RETURNING id, title, description, due_date, created_at, updated_at`
-	err := t.db.QueryRow(sqlQuery, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
+	err := t.db.QueryRow(updateTask, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return task, err_msg.ErrTaskNotFound
@@ -81,8 +93,7 @@ func (t *taskRepository) UpdateTask(id int, task Task) (Task, error) {
 }
 
 func (t *taskRepository) DeleteTask(id int) error {
-	sqlQuery := `DELETE FROM tasks WHERE id = $1`
-	result, err := t.db.Exec(sqlQuery, id)
+	result, err := t.db.Exec(deleteTask, id)
 	if err != nil {
 		return err
 	}
