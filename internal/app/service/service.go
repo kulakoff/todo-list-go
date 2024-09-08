@@ -6,7 +6,6 @@ import (
 	"github.com/kulakoff/todo-list-go/internal/err_msg"
 	"github.com/kulakoff/todo-list-go/internal/repositories"
 	"log/slog"
-	"time"
 )
 
 type TaskService interface {
@@ -22,9 +21,9 @@ type TaskServiceStruct struct {
 }
 
 func (t *TaskServiceStruct) CreateTask(task repositories.Task) (repositories.Task, error) {
-	now := time.Now()
-	task.CreatedAt = now
-	task.UpdatedAt = now
+	//now := time.Now()
+	//task.CreatedAt = now
+	//task.UpdatedAt = now
 
 	createdTask, err := t.repo.CreateTask(task)
 	if err != nil {
@@ -55,9 +54,6 @@ func (t *TaskServiceStruct) GetAllTasks() ([]repositories.Task, error) {
 }
 
 func (t *TaskServiceStruct) UpdateTask(id int, task repositories.Task) (repositories.Task, error) {
-	task = repositories.Task{}
-	task.UpdatedAt = time.Now()
-
 	updatedTask, err := t.repo.UpdateTask(id, task)
 	if err != nil {
 		return repositories.Task{}, err

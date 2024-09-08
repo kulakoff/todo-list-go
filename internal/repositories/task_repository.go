@@ -28,6 +28,8 @@ const (
 )
 
 func (t *taskRepository) CreateTask(task Task) (Task, error) {
+	task.UpdateTimestamps()
+
 	err := t.db.QueryRow(insertTask, task.Title, task.Description, task.DueDate).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		slog.Error("Failed to create task", err)
@@ -54,14 +56,14 @@ func (t *taskRepository) GetAllTasks() ([]Task, error) {
 	for rows.Next() {
 		var task Task
 		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt); err != nil {
-			slog.Info("Error scanning row:", err)
+			slog.Error("Error scanning row:", err)
 			continue
 		}
 		tasks = append(tasks, task)
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Info("Rows iteration error:", err)
+		slog.Error("Rows iteration error:", err)
 		return nil, err
 	}
 
@@ -72,21 +74,22 @@ func (t *taskRepository) GetTaskById(id int) (Task, error) {
 	var task Task
 	err := t.db.QueryRow(selectTaskById, id).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
-		//if errors.Is(err, sql.ErrNoRows) {
-		//	slog.Info(err.Error())
-		//	return task, err_msg.ErrTaskNotFound
-		//}
 		return task, err
 	}
+	slog.Error("Failed to get task by id", err)
 	return task, nil
 }
 
 func (t *taskRepository) UpdateTask(id int, task Task) (Task, error) {
+	task.UpdateTimestamps()
+
 	err := t.db.QueryRow(updateTask, id, task.Title, task.Description, task.DueDate, task.UpdatedAt).Scan(&task.ID, &task.Title, &task.Description, &task.DueDate, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			slog.Warn("Task not found for update", "taskID", id)
 			return task, err_msg.ErrTaskNotFound
 		}
+		slog.Error("Failed to update task", err)
 		return task, err
 	}
 	return task, nil
@@ -95,17 +98,18 @@ func (t *taskRepository) UpdateTask(id int, task Task) (Task, error) {
 func (t *taskRepository) DeleteTask(id int) error {
 	result, err := t.db.Exec(deleteTask, id)
 	if err != nil {
+		slog.Error("Failed to delete task", err)
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		slog.Info("Error checking rows affected:", err)
+		slog.Error("Error checking rows affected", err)
 		return err
 	}
 
 	if rowsAffected == 0 {
-		slog.Info("No rows were affected", "taskID", id)
+		slog.Warn("No rows were affected by delete", "taskID", id)
 		return err_msg.ErrTaskNotFound
 	}
 
