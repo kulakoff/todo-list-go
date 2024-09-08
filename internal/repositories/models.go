@@ -1,6 +1,9 @@
 package repositories
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Task struct {
 	ID          int       `json:"id" db:"id"`
@@ -17,4 +20,17 @@ func (t *Task) UpdateTimestamps() {
 		t.CreatedAt = now
 	}
 	t.UpdatedAt = now
+}
+
+func (t *Task) Validate() error {
+	if t.Title == "" {
+		return errors.New("title is required")
+	}
+	if t.Description == "" {
+		return errors.New("description is required")
+	}
+	if t.DueDate.Before(time.Now()) {
+		return errors.New("due date is required")
+	}
+	return nil
 }

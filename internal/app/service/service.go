@@ -9,21 +9,35 @@ import (
 )
 
 type TaskService interface {
-	CreateTask(task repositories.Task) (repositories.Task, error)
-	GetTask(id int) (repositories.Task, error)
 	GetAllTasks() ([]repositories.Task, error)
+	GetTask(id int) (repositories.Task, error)
+	CreateTask(task repositories.Task) (repositories.Task, error)
 	UpdateTask(id int, task repositories.Task) (repositories.Task, error)
 	DeleteTask(id int) error
 }
 
-type TaskServiceStruct struct {
+type taskService struct {
 	repo repositories.TaskRepository
 }
 
-func (t *TaskServiceStruct) CreateTask(task repositories.Task) (repositories.Task, error) {
-	//now := time.Now()
-	//task.CreatedAt = now
-	//task.UpdatedAt = now
+func New(repo repositories.TaskRepository) *taskService {
+	return &taskService{repo: repo}
+}
+
+func (t *taskService) GetAllTasks() ([]repositories.Task, error) {
+	tasks, err := t.repo.GetAllTasks()
+	if err != nil {
+		slog.Error("Failed to get all tasks", "error", err)
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (t *taskService) CreateTask(task repositories.Task) (repositories.Task, error) {
+	if err := task.Validate(); err != nil {
+		slog.Warn("Task validation failed", "error", err)
+		return repositories.Task{}, err
+	}
 
 	createdTask, err := t.repo.CreateTask(task)
 	if err != nil {
@@ -32,44 +46,45 @@ func (t *TaskServiceStruct) CreateTask(task repositories.Task) (repositories.Tas
 	return createdTask, nil
 }
 
-func (t *TaskServiceStruct) GetTask(id int) (repositories.Task, error) {
+func (t *taskService) GetTask(id int) (repositories.Task, error) {
 	task, err := t.repo.GetTaskById(id)
 	if err != nil {
-		slog.Info("service.GetTask ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
-			slog.Info(err.Error())
-			return task, err_msg.ErrTaskNotFound
+			slog.Warn("Task not found", "taskID", id)
+			return repositories.Task{}, err_msg.ErrTaskNotFound
 		}
-		return task, err
+		return repositories.Task{}, err
 	}
 	return task, nil
 }
 
-func (t *TaskServiceStruct) GetAllTasks() ([]repositories.Task, error) {
-	tasks, err := t.repo.GetAllTasks()
-	if err != nil {
-		return []repositories.Task{}, err
+func (t *taskService) UpdateTask(id int, task repositories.Task) (repositories.Task, error) {
+	if err := task.Validate(); err != nil {
+		slog.Warn("Task validation failed", "error", err)
+		return repositories.Task{}, err
 	}
-	return tasks, nil
-}
 
-func (t *TaskServiceStruct) UpdateTask(id int, task repositories.Task) (repositories.Task, error) {
 	updatedTask, err := t.repo.UpdateTask(id, task)
 	if err != nil {
+		if errors.Is(err, err_msg.ErrTaskNotFound) {
+			slog.Warn("Task not found for update", "taskID", id)
+			return repositories.Task{}, err_msg.ErrTaskNotFound
+		}
+		slog.Error("Failed to update task", "error", err)
 		return repositories.Task{}, err
 	}
 	return updatedTask, nil
 }
 
-func (t *TaskServiceStruct) DeleteTask(id int) error {
+func (t *taskService) DeleteTask(id int) error {
 	err := t.repo.DeleteTask(id)
 	if err != nil {
+		if errors.Is(err, err_msg.ErrTaskNotFound) {
+			slog.Warn("Task not found for deletion", "taskID", id)
+			return err_msg.ErrTaskNotFound
+		}
+		slog.Error("Failed to delete task", "error", err)
 		return err
 	}
 	return nil
-}
-
-func New(repo repositories.TaskRepository) *TaskServiceStruct {
-	return &TaskServiceStruct{repo: repo}
-
 }

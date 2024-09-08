@@ -11,11 +11,19 @@ import (
 	"strconv"
 )
 
-type Endpoint struct {
+type Endpoint interface {
+	GetAll(c echo.Context) error
+	Get(c echo.Context) error
+	Create(c echo.Context) error
+	Update(c echo.Context) error
+	Delete(c echo.Context) error
+}
+
+type endpoint struct {
 	s service.TaskService
 }
 
-func (e *Endpoint) GetAll(c echo.Context) error {
+func (e *endpoint) GetAll(c echo.Context) error {
 	tasks, err := e.s.GetAllTasks()
 	if err != nil {
 		slog.Info(err.Error())
@@ -24,7 +32,7 @@ func (e *Endpoint) GetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, tasks)
 }
 
-func (e *Endpoint) Get(c echo.Context) error {
+func (e *endpoint) Get(c echo.Context) error {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -44,7 +52,7 @@ func (e *Endpoint) Get(c echo.Context) error {
 	return c.JSON(http.StatusOK, task)
 }
 
-func (e *Endpoint) Create(c echo.Context) error {
+func (e *endpoint) Create(c echo.Context) error {
 	// TODO: Implement check payload data
 	task := repositories.Task{}
 	err := c.Bind(&task)
@@ -60,7 +68,7 @@ func (e *Endpoint) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, newTask)
 }
 
-func (e *Endpoint) Update(c echo.Context) error {
+func (e *endpoint) Update(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -87,7 +95,7 @@ func (e *Endpoint) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, updatedTask)
 }
 
-func (e *Endpoint) Delete(c echo.Context) error {
+func (e *endpoint) Delete(c echo.Context) error {
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -98,7 +106,6 @@ func (e *Endpoint) Delete(c echo.Context) error {
 	err = e.s.DeleteTask(idInt)
 	if err != nil {
 		if errors.Is(err, err_msg.ErrTaskNotFound) {
-			slog.Info("Error deleting task, not found")
 			return c.JSON(http.StatusNotFound, err_msg.ErrTaskNotFound.Error())
 		}
 		return c.JSON(http.StatusInternalServerError, err_msg.ErrInternal.Error())
@@ -107,9 +114,6 @@ func (e *Endpoint) Delete(c echo.Context) error {
 	return c.JSON(http.StatusNoContent, nil)
 }
 
-func New(s service.TaskService) Endpoint {
-	return Endpoint{s: s}
-	//return &Endpoint{
-	//	s: s,
-	//}
+func New(s service.TaskService) *endpoint {
+	return &endpoint{s: s}
 }
